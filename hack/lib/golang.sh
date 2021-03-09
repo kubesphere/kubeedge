@@ -137,7 +137,7 @@ kubeedge::check::env() {
 
   # check other env
 
-  # check length of errors
+  # check lenth of errors
   if [[ ${#errors[@]} -ne 0 ]] ; then
     local error
     for error in "${errors[@]}"; do
@@ -176,16 +176,16 @@ kubeedge::golang::get_all_targets() {
   echo ${targets[@]}
 }
 
-kubeedge::golang::get_all_binaries() {
-  local -a binaries
+kubeedge::golang::get_all_binares() {
+  local -a binares
   for bt in "${ALL_BINARIES_AND_TARGETS[@]}" ; do
-    binaries+=("${bt%%:*}")
+    binares+=("${bt%%:*}")
   done
-  echo ${binaries[@]}
+  echo ${binares[@]}
 }
 
 IFS=" " read -ra KUBEEDGE_ALL_TARGETS <<< "$(kubeedge::golang::get_all_targets)"
-IFS=" " read -ra KUBEEDGE_ALL_BINARIES<<< "$(kubeedge::golang::get_all_binaries)"
+IFS=" " read -ra KUBEEDGE_ALL_BINARIES<<< "$(kubeedge::golang::get_all_binares)"
 
 kubeedge::golang::build_binaries() {
   kubeedge::check::env
@@ -222,6 +222,7 @@ kubeedge::golang::build_binaries() {
 KUBEEDGE_ALL_CROSS_BINARIES=(
 edgecore
 edgesite
+keadm
 )
 
 kubeedge::golang::is_cross_build_binary() {
@@ -434,11 +435,5 @@ kubeedge::golang::run_test() {
     testdirs+=("${KUBEEDGE_ALL_TESTCASES[@]}")
   fi
 
-  local profile=${PROFILE:-""}
-  if [[ $profile ]]; then
-    go test "-coverprofile=${profile}" ${testdirs[@]}
-    go tool cover -func=${profile}
-  else
-    go test ${testdirs[@]}
-  fi
+  go test ${testdirs[@]}
 }

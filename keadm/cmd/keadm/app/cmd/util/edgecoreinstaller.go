@@ -18,12 +18,13 @@ package util
 
 import (
 	"fmt"
-	"net"
 	"os"
-	"strconv"
+	"os/exec"
 	"strings"
 
-	"github.com/kubeedge/kubeedge/common/constants"
+	"github.com/blang/semver"
+	"github.com/google/uuid"
+
 	types "github.com/kubeedge/kubeedge/keadm/cmd/keadm/app/cmd/common"
 	"github.com/kubeedge/kubeedge/pkg/apis/componentconfig/edgecore/v1alpha1"
 )
@@ -35,12 +36,26 @@ type KubeEdgeInstTool struct {
 	CertPath              string
 	CloudCoreIP           string
 	EdgeNodeName          string
+	EdgeNodeIP            string
+	ConfigPath            string
 	RuntimeType           string
 	RemoteRuntimeEndpoint string
 	Token                 string
 	CertPort              string
+	QuicPort              string
+	TunnelPort            string
 	CGroupDriver          string
 	TarballPath           string
+}
+
+func CopyFile(pathSrc, pathDst string) {
+	c := fmt.Sprintf("cp -r %s %s", pathSrc, pathDst)
+	cmd := exec.Command("sh", "-c", c)
+	_, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("fail to copy file:  %s", c)
+		fmt.Printf("Output: %s\n", err.Error())
+	}
 }
 
 // InstallTools downloads KubeEdge for the specified verssion
@@ -81,50 +96,105 @@ func (ku *KubeEdgeInstTool) InstallTools() error {
 }
 
 func (ku *KubeEdgeInstTool) createEdgeConfigFiles() error {
-	//This makes sure the path is created, if it already exists also it is fine
-	err := os.MkdirAll(KubeEdgeConfigDir, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("not able to create %s folder path", KubeEdgeConfigDir)
-	}
+	if ku.ToolVersion.GE(semver.MustParse("1.2.0")) {
+		//This makes sure the path is created, if it already exists also it is fine
+		err := os.MkdirAll(KubeEdgeConfigDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("not able to create %s folder path", KubeEdgeConfigDir)
+		}
 
-	edgeCoreConfig := v1alpha1.NewDefaultEdgeCoreConfig()
-	edgeCoreConfig.Modules.EdgeHub.WebSocket.Server = ku.CloudCoreIP
+		edgeCoreConfig := v1alpha1.NewDefaultEdgeCoreConfig()
+		edgeCoreConfig.Modules.EdgeHub.WebSocket.Server = ku.CloudCoreIP
 
-	if ku.EdgeNodeName != "" {
-		edgeCoreConfig.Modules.Edged.HostnameOverride = ku.EdgeNodeName
-	}
-	if ku.RuntimeType != "" {
-		edgeCoreConfig.Modules.Edged.RuntimeType = ku.RuntimeType
-	}
-	if ku.CGroupDriver != "" {
-		switch ku.CGroupDriver {
-		case v1alpha1.CGroupDriverSystemd:
-			edgeCoreConfig.Modules.Edged.CGroupDriver = v1alpha1.CGroupDriverSystemd
-		case v1alpha1.CGroupDriverCGroupFS:
-			edgeCoreConfig.Modules.Edged.CGroupDriver = v1alpha1.CGroupDriverCGroupFS
-		default:
-			return fmt.Errorf("unsupported CGroupDriver: %s", ku.CGroupDriver)
+		if ku.EdgeNodeName != "" {
+			edgeCoreConfig.Modules.Edged.HostnameOverride = ku.EdgeNodeName
+		}
+		if ku.EdgeNodeIP != "" {
+			edgeCoreConfig.Modules.Edged.NodeIP = ku.EdgeNodeIP
+		}
+		if ku.RuntimeType != "" {
+			edgeCoreConfig.Modules.Edged.RuntimeType = ku.RuntimeType
+		}
+		if ku.CGroupDriver != "" {
+			switch ku.CGroupDriver {
+			case v1alpha1.CGroupDriverSystemd:
+				edgeCoreConfig.Modules.Edged.CGroupDriver = v1alpha1.CGroupDriverSystemd
+			case v1alpha1.CGroupDriverCGroupFS:
+				edgeCoreConfig.Modules.Edged.CGroupDriver = v1alpha1.CGroupDriverCGroupFS
+			default:
+				return fmt.Errorf("unsupported CGroupDriver: %s", ku.CGroupDriver)
+			}
+		}
+
+		if ku.RemoteRuntimeEndpoint != "" {
+			edgeCoreConfig.Modules.Edged.RemoteRuntimeEndpoint = ku.RemoteRuntimeEndpoint
+			edgeCoreConfig.Modules.Edged.RemoteImageEndpoint = ku.RemoteRuntimeEndpoint
+		}
+		if ku.Token != "" {
+			edgeCoreConfig.Modules.EdgeHub.Token = ku.Token
+		}
+		if ku.CertPort != "" {
+			edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.CertPort
+		} else {
+			edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + strings.Split(ku.CloudCoreIP, ":")[0] + ":10002"
+		}
+		if ku.QuicPort != "" {
+			edgeCoreConfig.Modules.EdgeHub.Quic.Server = strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.QuicPort
+		} else {
+			edgeCoreConfig.Modules.EdgeHub.Quic.Server = strings.Split(ku.CloudCoreIP, ":")[0] + ":10001"
+		}
+		if ku.TunnelPort != "" {
+			edgeCoreConfig.Modules.EdgeStream.TunnelServer = strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.TunnelPort
+		} else {
+			edgeCoreConfig.Modules.EdgeStream.TunnelServer = strings.Split(ku.CloudCoreIP, ":")[0] + ":10004"
+		}
+		edgeCoreConfig.Modules.EdgeStream.Enable = true
+
+		if ku.ToolVersion.Major == 1 && ku.ToolVersion.Minor == 2 {
+			edgeCoreConfig.Modules.EdgeHub.TLSPrivateKeyFile = strings.Join([]string{KubeEdgeCloudDefaultCertPath, "server.key"}, "")
+			edgeCoreConfig.Modules.EdgeHub.TLSCertFile = strings.Join([]string{KubeEdgeCloudDefaultCertPath, "server.crt"}, "")
+		}
+		if err := types.Write2File(KubeEdgeEdgeCoreNewYaml, edgeCoreConfig); err != nil {
+			return err
+		}
+	} else {
+		//This makes sure the path is created, if it already exists also it is fine
+		err := os.MkdirAll(KubeEdgeConfPath, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("not able to create %s folder path", KubeEdgeConfPath)
+		}
+
+		// //Create edge.yaml
+		//Update edge.yaml with a unique id against node id
+		//If the user doesn't provide any edge ID on the command line, then it generates unique id and assigns it.
+		edgeID := uuid.New().String()
+		if "" != ku.EdgeNodeName {
+			edgeID = ku.EdgeNodeName
+		}
+
+		serverIPAddr := "0.0.0.0"
+		if "" != ku.CloudCoreIP {
+			serverIPAddr = ku.CloudCoreIP
+		}
+
+		url := fmt.Sprintf("wss://%s:10000/%s/%s/events", serverIPAddr, types.DefaultProjectID, edgeID)
+		edgeYaml := &types.EdgeYamlSt{EdgeHub: types.EdgeHubSt{WebSocket: types.WebSocketSt{URL: url}},
+			EdgeD: types.EdgeDSt{RuntimeType: ku.RuntimeType}}
+
+		if err = types.WriteEdgeYamlFile(KubeEdgeConfigEdgeYaml, edgeYaml); err != nil {
+			return err
+		}
+
+		//Create modules.yaml
+		if err = types.WriteEdgeModulesYamlFile(KubeEdgeConfigModulesYaml); err != nil {
+			return err
 		}
 	}
 
-	if ku.RemoteRuntimeEndpoint != "" {
-		edgeCoreConfig.Modules.Edged.RemoteRuntimeEndpoint = ku.RemoteRuntimeEndpoint
-		edgeCoreConfig.Modules.Edged.RemoteImageEndpoint = ku.RemoteRuntimeEndpoint
+	if "" != ku.ConfigPath {
+		CopyFile(ku.ConfigPath, "/etc/kubeedge/config/edgecore.yaml")
 	}
-	if ku.Token != "" {
-		edgeCoreConfig.Modules.EdgeHub.Token = ku.Token
-	}
-	cloudCoreIP := strings.Split(ku.CloudCoreIP, ":")[0]
-	if ku.CertPort != "" {
-		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + cloudCoreIP + ":" + ku.CertPort
-	} else {
-		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + cloudCoreIP + ":10002"
-	}
-	edgeCoreConfig.Modules.EdgeStream.TunnelServer = net.JoinHostPort(cloudCoreIP, strconv.Itoa(constants.DefaultTunnelPort))
 
-	if err := types.Write2File(KubeEdgeEdgeCoreNewYaml, edgeCoreConfig); err != nil {
-		return err
-	}
 	return nil
 }
 
