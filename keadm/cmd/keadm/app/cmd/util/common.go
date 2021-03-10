@@ -49,11 +49,9 @@ const (
 	DebianOSType   = "debian"
 	CentOSType     = "centos"
 
-	KubeEdgeDownloadURL          = "https://kubeedge.pek3b.qingstor.com/releases/download"
 	OldEdgeServiceFile           = "edge.service"
 	EdgeServiceFile              = "edgecore.service"
 	CloudServiceFile             = "cloudcore.service"
-	ServiceFileURLFormat         = "https://kubeedge.pek3b.qingstor.com/releases/service/%s/%s"
 	KubeEdgePath                 = "/etc/kubeedge/"
 	KubeEdgeUsrBinPath           = "/usr/local/bin"
 	KubeEdgeConfPath             = KubeEdgePath + "kubeedge/edge/conf"
@@ -89,6 +87,11 @@ const (
 	KB int = 1024
 	MB int = KB * 1024
 	GB int = MB * 1024
+)
+
+var (
+	KubeEdgeDownloadURL  = "https://kubeedge.pek3b.qingstor.com/releases/download"
+	ServiceFileURLFormat = "https://kubeedge.pek3b.qingstor.com/releases/service/%s/%s"
 )
 
 //AddToolVals gets the value and default values of each flags and collects them in temporary cache

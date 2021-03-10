@@ -74,6 +74,9 @@ const (
 	// QuicServer sets the port where to apply for the edge quic
 	QuicPort = "quicport"
 
+	// Used to distinguish download links  for KubeEdge EdgeCore and Services
+	Region = "region"
+
 	// Tunnel sets the port where to apply for the edge stream
 	TunnelPort = "tunnelport"
 

@@ -37,6 +37,7 @@ type KubeEdgeInstTool struct {
 	CloudCoreIP           string
 	EdgeNodeName          string
 	EdgeNodeIP            string
+	Region                string
 	ConfigPath            string
 	RuntimeType           string
 	RemoteRuntimeEndpoint string
@@ -76,6 +77,11 @@ func (ku *KubeEdgeInstTool) InstallTools() error {
 	opts := &types.InstallOptions{
 		TarballPath:   ku.TarballPath,
 		ComponentType: types.EdgeCore,
+	}
+
+	if ku.Region == "en" {
+		KubeEdgeDownloadURL = "https://github.com/kubeedge/kubeedge/releases/download"
+		ServiceFileURLFormat = "https://raw.githubusercontent.com/kubeedge/kubeedge/release-%s/build/tools/%s"
 	}
 
 	err = ku.InstallKubeEdge(*opts)

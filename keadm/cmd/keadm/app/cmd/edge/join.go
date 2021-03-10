@@ -106,6 +106,9 @@ func addJoinOtherFlags(cmd *cobra.Command, joinOptions *types.JoinOptions) {
 	cmd.Flags().StringVarP(&joinOptions.EdgeNodeIP, types.EdgeNodeIP, "a", joinOptions.EdgeNodeIP,
 		"KubeEdge Node internal IP reported to K8s cluster, If flag not used then the command will use the IP address read from node network")
 
+	cmd.Flags().StringVarP(&joinOptions.Region, types.Region, "z", joinOptions.Region,
+		"Used to distinguish download links for KubeEdge EdgeCore and Services")
+
 	cmd.Flags().StringVarP(&joinOptions.ConfigPath, types.ConfigPath, "c", joinOptions.ConfigPath,
 		"KubeEdge config file path used to join")
 
@@ -171,6 +174,7 @@ func Add2ToolsList(toolList map[string]types.ToolsInstaller, flagData map[string
 		EdgeNodeName:          joinOptions.EdgeNodeName,
 		EdgeNodeIP:            joinOptions.EdgeNodeIP,
 		ConfigPath:            joinOptions.ConfigPath,
+		Region:                joinOptions.Region,
 		RuntimeType:           joinOptions.RuntimeType,
 		CertPath:              joinOptions.CertPath,
 		RemoteRuntimeEndpoint: joinOptions.RemoteRuntimeEndpoint,
