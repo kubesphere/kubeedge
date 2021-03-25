@@ -18,12 +18,9 @@ package util
 
 import (
 	"fmt"
-	"net"
 	"os"
-	"strconv"
 	"strings"
 
-	"github.com/kubeedge/kubeedge/common/constants"
 	types "github.com/kubeedge/kubeedge/keadm/cmd/keadm/app/cmd/common"
 	"github.com/kubeedge/kubeedge/pkg/apis/componentconfig/edgecore/v1alpha1"
 )
@@ -35,10 +32,15 @@ type KubeEdgeInstTool struct {
 	CertPath              string
 	CloudCoreIP           string
 	EdgeNodeName          string
+	EdgeNodeIP            string
+	Region                string
+	ConfigPath            string
 	RuntimeType           string
 	RemoteRuntimeEndpoint string
 	Token                 string
 	CertPort              string
+	QuicPort              string
+	TunnelPort            string
 	CGroupDriver          string
 	TarballPath           string
 }
@@ -61,6 +63,11 @@ func (ku *KubeEdgeInstTool) InstallTools() error {
 	opts := &types.InstallOptions{
 		TarballPath:   ku.TarballPath,
 		ComponentType: types.EdgeCore,
+	}
+
+	if ku.Region == "en" {
+		KubeEdgeDownloadURL = "https://github.com/kubeedge/kubeedge/releases/download"
+		ServiceFileURLFormat = "https://raw.githubusercontent.com/kubeedge/kubeedge/release-%s/build/tools/%s"
 	}
 
 	err = ku.InstallKubeEdge(*opts)
@@ -93,6 +100,9 @@ func (ku *KubeEdgeInstTool) createEdgeConfigFiles() error {
 	if ku.EdgeNodeName != "" {
 		edgeCoreConfig.Modules.Edged.HostnameOverride = ku.EdgeNodeName
 	}
+	if ku.EdgeNodeIP != "" {
+		edgeCoreConfig.Modules.Edged.NodeIP = ku.EdgeNodeIP
+	}
 	if ku.RuntimeType != "" {
 		edgeCoreConfig.Modules.Edged.RuntimeType = ku.RuntimeType
 	}
@@ -114,14 +124,28 @@ func (ku *KubeEdgeInstTool) createEdgeConfigFiles() error {
 	if ku.Token != "" {
 		edgeCoreConfig.Modules.EdgeHub.Token = ku.Token
 	}
-	cloudCoreIP := strings.Split(ku.CloudCoreIP, ":")[0]
 	if ku.CertPort != "" {
-		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + cloudCoreIP + ":" + ku.CertPort
+		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.CertPort
 	} else {
-		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + cloudCoreIP + ":10002"
+		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + strings.Split(ku.CloudCoreIP, ":")[0] + ":10002"
 	}
-	edgeCoreConfig.Modules.EdgeStream.TunnelServer = net.JoinHostPort(cloudCoreIP, strconv.Itoa(constants.DefaultTunnelPort))
+	if ku.QuicPort != "" {
+		edgeCoreConfig.Modules.EdgeHub.Quic.Server = strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.QuicPort
+	} else {
+		edgeCoreConfig.Modules.EdgeHub.Quic.Server = strings.Split(ku.CloudCoreIP, ":")[0] + ":10001"
+	}
+	if ku.TunnelPort != "" {
+		edgeCoreConfig.Modules.EdgeStream.TunnelServer = strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.TunnelPort
+	} else {
+		edgeCoreConfig.Modules.EdgeStream.TunnelServer = strings.Split(ku.CloudCoreIP, ":")[0] + ":10004"
+	}
 
+	edgeCoreConfig.Modules.EdgeStream.Enable = true
+
+	if ku.ToolVersion.Major == 1 && ku.ToolVersion.Minor == 2 {
+		edgeCoreConfig.Modules.EdgeHub.TLSPrivateKeyFile = strings.Join([]string{KubeEdgeCloudDefaultCertPath, "server.key"}, "")
+		edgeCoreConfig.Modules.EdgeHub.TLSCertFile = strings.Join([]string{KubeEdgeCloudDefaultCertPath, "server.crt"}, "")
+	}
 	if err := types.Write2File(KubeEdgeEdgeCoreNewYaml, edgeCoreConfig); err != nil {
 		return err
 	}

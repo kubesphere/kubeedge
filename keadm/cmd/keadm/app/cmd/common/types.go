@@ -38,10 +38,15 @@ type JoinOptions struct {
 	CertPath              string
 	CloudCoreIPPort       string
 	EdgeNodeName          string
+	EdgeNodeIP            string
+	Region                string
+	ConfigPath            string
 	RuntimeType           string
 	RemoteRuntimeEndpoint string
 	Token                 string
 	CertPort              string
+	QuicPort              string
+	TunnelPort            string
 	CGroupDriver          string
 }
 
@@ -62,7 +67,7 @@ type CheckObject struct {
 	Cmd  string
 }
 
-// CollectOptions has the kubeedge debug collect information filled by CLI
+// ColletcOptions has the kubeedge debug colletc information filled by CLI
 type CollectOptions struct {
 	Config     string
 	OutputPath string
