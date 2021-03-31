@@ -48,6 +48,7 @@ type JoinOptions struct {
 	QuicPort              string
 	TunnelPort            string
 	CGroupDriver          string
+	DownloadURL           string
 }
 
 type CheckOptions struct {

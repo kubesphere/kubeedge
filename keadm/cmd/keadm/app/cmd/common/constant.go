@@ -95,6 +95,8 @@ const (
 	// eg.  "/tmp/kubeedge" or "/etc/kubeedge" by default
 	TarballPath = "tarballpath"
 
+	DownloadURL = "downloadurl"
+
 	StrCheck    = "check"
 	StrDiagnose = "diagnose"
 

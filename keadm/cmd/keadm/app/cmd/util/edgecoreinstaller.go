@@ -47,6 +47,7 @@ type KubeEdgeInstTool struct {
 	TunnelPort            string
 	CGroupDriver          string
 	TarballPath           string
+	DownloadURL           string
 }
 
 func CopyFile(pathSrc, pathDst string) {
@@ -77,6 +78,11 @@ func (ku *KubeEdgeInstTool) InstallTools() error {
 	opts := &types.InstallOptions{
 		TarballPath:   ku.TarballPath,
 		ComponentType: types.EdgeCore,
+	}
+
+	if ku.DownloadURL != "" {
+		KubeEdgeDownloadURL = fmt.Sprintf("%s/releases/download", ku.DownloadURL)
+		ServiceFileURLFormat = fmt.Sprintf("%s/releases/service/%s/%s", ku.DownloadURL, "%s", "%s")
 	}
 
 	if ku.Region == "en" {
