@@ -143,7 +143,9 @@ integrationtest:
 endif
 
 CROSSBUILD_COMPONENTS=edgecore\
-	edgesite
+	edgesite\
+	keadm
+	
 GOARM_VALUES=GOARM7 \
 	GOARM8
 
