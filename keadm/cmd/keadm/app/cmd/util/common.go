@@ -42,19 +42,19 @@ import (
 
 // Constants used by installers
 const (
-	KubeEdgeDownloadURL  = "https://github.com/kubeedge/kubeedge/releases/download"
-	EdgeServiceFile      = "edgecore.service"
-	CloudServiceFile     = "cloudcore.service"
-	ServiceFileURLFormat = "https://raw.githubusercontent.com/kubeedge/kubeedge/release-%s/build/tools/%s"
-	KubeEdgePath         = "/etc/kubeedge/"
-	KubeEdgeUsrBinPath   = "/usr/local/bin"
-	KubeEdgeBinaryName   = "edgecore"
+	EdgeServiceFile    = "edgecore.service"
+	CloudServiceFile   = "cloudcore.service"
+	KubeEdgePath       = "/etc/kubeedge/"
+	KubeEdgeUsrBinPath = "/usr/local/bin"
+	KubeEdgeBinaryName = "edgecore"
 
 	KubeCloudBinaryName = "cloudcore"
 
-	KubeEdgeConfigDir        = KubeEdgePath + "config/"
-	KubeEdgeCloudCoreNewYaml = KubeEdgeConfigDir + "cloudcore.yaml"
-	KubeEdgeEdgeCoreNewYaml  = KubeEdgeConfigDir + "edgecore.yaml"
+	KubeEdgeConfigDir            = KubeEdgePath + "config/"
+	KubeEdgeCloudDefaultCertPath = KubeEdgePath + "certs/"
+	KubeEdgeCloudCoreNewYaml     = KubeEdgeConfigDir + "cloudcore.yaml"
+
+	KubeEdgeEdgeCoreNewYaml = KubeEdgeConfigDir + "edgecore.yaml"
 
 	KubeEdgeLogPath = "/var/log/kubeedge/"
 	KubeEdgeCrdPath = KubeEdgePath + "crds"
@@ -62,8 +62,6 @@ const (
 	KubeEdgeSocketPath = "/var/lib/kubeedge/"
 
 	EdgeRootDir = "/var/lib/edged"
-
-	SystemdBootPath = "/run/systemd/system"
 
 	KubeEdgeCRDDownloadURL = "https://raw.githubusercontent.com/kubeedge/kubeedge/release-%s/build/crds"
 
@@ -77,6 +75,11 @@ const (
 	APT    string = "apt"
 	YUM    string = "yum"
 	PACMAN string = "pacman"
+)
+
+var (
+	KubeEdgeDownloadURL  = "https://kubeedge.pek3b.qingstor.com/releases/download"
+	ServiceFileURLFormat = "https://kubeedge.pek3b.qingstor.com/releases/service/%s/%s"
 )
 
 // AddToolVals gets the value and default values of each flags and collects them in temporary cache
@@ -422,20 +425,14 @@ func isEdgeCoreServiceRunning(serviceName string) (bool, error) {
 }
 
 // check if systemd exist
-// if command run failed, then check it by sd_booted
 func hasSystemd() bool {
 	cmd := "file /sbin/init"
 
-	if err := NewCommand(cmd).Exec(); err == nil {
-		return true
-	}
-	// checks whether `SystemdBootPath` exists and is a directory
-	// reference http://www.freedesktop.org/software/systemd/man/sd_booted.html
-	fi, err := os.Lstat(SystemdBootPath)
-	if err != nil {
+	if err := NewCommand(cmd).Exec(); err != nil {
 		return false
 	}
-	return fi.IsDir()
+
+	return true
 }
 
 func checkSum(filename, checksumFilename string, version semver.Version, tarballPath string) (bool, error) {

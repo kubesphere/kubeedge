@@ -152,8 +152,7 @@ ALL_BINARIES_AND_TARGETS=(
   admission:cloud/cmd/admission
   keadm:keadm/cmd/keadm
   edgecore:edge/cmd/edgecore
-  edgesite-agent:edgesite/cmd/edgesite-agent
-  edgesite-server:edgesite/cmd/edgesite-server
+  edgesite:edgesite/cmd/edgesite
 )
 
 kubeedge::golang::get_target_by_binary() {
@@ -222,6 +221,8 @@ kubeedge::golang::build_binaries() {
 
 KUBEEDGE_ALL_CROSS_BINARIES=(
 edgecore
+edgesite
+keadm
 )
 
 kubeedge::golang::is_cross_build_binary() {
@@ -305,6 +306,7 @@ kubeedge::golang::cross_build_place_binaries() {
 
 KUBEEDGE_ALL_SMALL_BINARIES=(
 edgecore
+edgesite
 )
 
 kubeedge::golang::is_small_build_binary() {
@@ -388,31 +390,20 @@ kubeedge::golang::get_edge_test_dirs() {
   )
 }
 
-kubeedge::golang::get_pkg_test_dirs() {
-    cd ${KUBEEDGE_ROOT}
-    findDirs=$(find -L ./pkg \
-	    -name '*_test.go' -print | xargs -n1 dirname | uniq)
-    dirArray=(${findDirs// /})
-    echo "${dirArray[@]}"
-}
-
 read -ra KUBEEDGE_CLOUD_TESTCASES <<< "$(kubeedge::golang::get_cloud_test_dirs)"
 read -ra KUBEEDGE_EDGE_TESTCASES <<< "$(kubeedge::golang::get_edge_test_dirs)"
 read -ra KUBEEDGE_KEADM_TESTCASES <<< "$(kubeedge::golang::get_keadm_test_dirs)"
-read -ra KUBEEDGE_PKG_TESTCASES <<< "$(kubeedge::golang::get_pkg_test_dirs)"
 
 readonly KUBEEDGE_ALL_TESTCASES=(
   ${KUBEEDGE_CLOUD_TESTCASES[@]}
   ${KUBEEDGE_EDGE_TESTCASES[@]}
   ${KUBEEDGE_KEADM_TESTCASES[@]}
-  ${KUBEEDGE_PKG_TESTCASES[@]}
 )
 
 ALL_COMPONENTS_AND_GETTESTDIRS_FUNCTIONS=(
   cloud::::kubeedge::golang::get_cloud_test_dirs
   edge::::kubeedge::golang::get_edge_test_dirs
   keadm::::kubeedge::golang::get_keadm_test_dirs
-  pkg::::kubeedge::golang::get_pkg_test_dirs
 )
 
 kubeedge::golang::get_testdirs_by_component() {

@@ -35,6 +35,15 @@ const (
 	// KubeEdge Node unique idenfitcation string
 	EdgeNodeName = "edgenode-name"
 
+	//HasDefaultTaintis used to determining whether to add taint on edge node
+	HasDefaultTaint = "with-edge-taint"
+
+	// KubeEdge Node IP address string
+	EdgeNodeIP = "edgenode-ip"
+
+	// KubeEdge EdgeCore config file path for override
+	ConfigPath = "edgecoreconfigpath"
+
 	// KubeEdge remote-runtime-endpoint string
 	RemoteRuntimeEndpoint = "remote-runtime-endpoint"
 
@@ -65,6 +74,15 @@ const (
 	// HttpServer sets the port where to apply for the edge certificate
 	CertPort = "certport"
 
+	// QuicServer sets the port where to apply for the edge quic
+	QuicPort = "quicport"
+
+	// Used to distinguish download links  for KubeEdge EdgeCore and Services
+	Region = "region"
+
+	// Tunnel sets the port where to apply for the edge stream
+	TunnelPort = "tunnelport"
+
 	AdvertiseAddress = "advertise-address"
 
 	TokenSecretName = "tokensecret"
@@ -83,11 +101,17 @@ const (
 	StrCheck    = "check"
 	StrDiagnose = "diagnose"
 
-	CmdGetDNSIP         = "cat /etc/resolv.conf | grep nameserver | grep -v -E ':|#' | awk '{print $2}' | head -n1"
+	CmdGetArch = "arch"
+	//CmdGetCPUNum     = "cat /proc/cpuinfo  |grep processor| wc -l"
+	//CmdGetMenorySize = "free -h |grep Mem|awk '{print $2}'"
+	//CmdGetDiskSize      = "df -h |grep -ve \" /.\"|sed -n \"2p\"|awk '{print $2}'"
+	CmdGetDNSIP         = "cat /etc/resolv.conf |grep nameserver|grep -v ':'|awk '{print $2}'|sed -n '1p'"
 	CmdGetStatusDocker  = "systemctl status docker |grep Active | awk '{print $2}'"
 	CmdPing             = "ping %s -w %d |grep 'packets transmitted' |awk '{print $6}'"
 	CmdGetMaxProcessNum = "sysctl kernel.pid_max|awk '{print $3}'"
 	CmdGetProcessNum    = "ps -A|wc -l"
+
+	DefaultDomain = "www.github.com"
 
 	EdgecoreConfig = "config"
 
