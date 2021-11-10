@@ -25,7 +25,7 @@ type Manager struct {
 	cmLister            v1.ConfigMapLister
 	cmListerSynced      cache.InformerSynced
 	preTunnelPortRecord *TunnelPortRecord
-	cloudStream         *v1alpha1.CloudStream
+	config              *v1alpha1.IptablesManager
 }
 
 type TunnelPortRecord struct {
@@ -51,7 +51,7 @@ var iptablesJumpChains = []iptablesJumpChain{
 	{utiliptables.TableNAT, tunnelPortChain, utiliptables.ChainPrerouting, "kubeedge tunnel port", nil},
 }
 
-func NewIptablesManager(stream *v1alpha1.CloudStream) *Manager {
+func NewIptablesManager(config *v1alpha1.IptablesManager) *Manager {
 	protocol := utiliptables.ProtocolIPv4
 	exec := utilexec.New()
 	iptInterface := utiliptables.New(exec, protocol)
@@ -62,12 +62,11 @@ func NewIptablesManager(stream *v1alpha1.CloudStream) *Manager {
 			IPTunnelPort: make(map[string]int),
 			Port:         make(map[int]bool),
 		},
-		cloudStream: stream,
+		config: config,
 	}
 
 	// informer factory
 	k8sInformerFactory := informers.GetInformersManager().GetK8sInformerFactory()
-
 	configMapsInformer := k8sInformerFactory.Core().V1().ConfigMaps()
 
 	// lister
@@ -114,24 +113,28 @@ func (im *Manager) reconcile() {
 		return
 	}
 
+	var forwardPort uint32 = im.config.ForwardPort
+
 	for _, ipports := range addedIPPort {
 		ipport := strings.Split(ipports, ":")
 		ip, port := ipport[0], ipport[1]
-		args := append([]string{"-p", "tcp", "-j", "DNAT", "--dport", port, "--to", ip + ":" + strconv.Itoa(int(im.cloudStream.StreamPort))})
+		args := append([]string{"-p", "tcp", "-j", "DNAT", "--dport", port, "--to", ip + ":" + strconv.Itoa(int(forwardPort))})
 		if _, err := im.iptables.EnsureRule(utiliptables.Append, utiliptables.TableNAT, tunnelPortChain, args...); err != nil {
 			klog.ErrorS(err, "Failed to ensure rules", "table", utiliptables.TableNAT, "chain", tunnelPortChain)
 			return
 		}
+		klog.Info("Successfully add rules", " table:", utiliptables.TableNAT, " chain:", tunnelPortChain)
 	}
 
 	for _, ipports := range deletedIPPort {
 		ipport := strings.Split(ipports, ":")
 		ip, port := ipport[0], ipport[1]
-		args := append([]string{"-p", "tcp", "-j", "DNAT", "--dport", port, "--to", ip + ":" + strconv.Itoa(int(im.cloudStream.StreamPort))})
+		args := append([]string{"-p", "tcp", "-j", "DNAT", "--dport", port, "--to", ip + ":" + strconv.Itoa(int(forwardPort))})
 		if err := im.iptables.DeleteRule(utiliptables.TableNAT, tunnelPortChain, args...); err != nil {
 			klog.ErrorS(err, "Failed to delete rules", "table", utiliptables.TableNAT, "chain", tunnelPortChain)
 			return
 		}
+		klog.Info("Successfully delete rule", " table:", utiliptables.TableNAT, " chain:", tunnelPortChain)
 	}
 }
 
@@ -143,9 +146,7 @@ func (im *Manager) getAddedAndDeletedCloudCoreIPPort() ([]string, []string, erro
 
 	addedIPPorts := []string{}
 	for ip, port := range latestRecord.IPTunnelPort {
-		if _, ok := im.preTunnelPortRecord.IPTunnelPort[ip]; !ok {
-			addedIPPorts = append(addedIPPorts, strings.Join([]string{ip, strconv.Itoa(port)}, ":"))
-		}
+		addedIPPorts = append(addedIPPorts, strings.Join([]string{ip, strconv.Itoa(port)}, ":"))
 	}
 
 	deletedIPPorts := []string{}
