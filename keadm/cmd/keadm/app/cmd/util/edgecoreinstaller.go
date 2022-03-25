@@ -24,6 +24,8 @@ import (
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/kubeedge/kubeedge/common/constants"
 	types "github.com/kubeedge/kubeedge/keadm/cmd/keadm/app/cmd/common"
 	"github.com/kubeedge/kubeedge/pkg/apis/componentconfig/edgecore/v1alpha1"
@@ -44,6 +46,12 @@ type KubeEdgeInstTool struct {
 	CertPort              string
 	CGroupDriver          string
 	TarballPath           string
+	HasDefaultTaint       bool
+	EdgeNodeIP            string
+	Region                string
+	ConfigPath            string
+	QuicPort              string
+	TunnelPort            string
 	Labels                []string
 }
 
@@ -65,6 +73,11 @@ func (ku *KubeEdgeInstTool) InstallTools() error {
 	opts := &types.InstallOptions{
 		TarballPath:   ku.TarballPath,
 		ComponentType: types.EdgeCore,
+	}
+
+	if ku.Region == "en" {
+		KubeEdgeDownloadURL = "https://github.com/kubeedge/kubeedge/releases/download"
+		ServiceFileURLFormat = "https://raw.githubusercontent.com/kubeedge/kubeedge/release-%s/build/tools/%s"
 	}
 
 	err = ku.InstallKubeEdge(*opts)
@@ -97,9 +110,42 @@ func (ku *KubeEdgeInstTool) createEdgeConfigFiles() error {
 	if ku.EdgeNodeName != "" {
 		edgeCoreConfig.Modules.Edged.HostnameOverride = ku.EdgeNodeName
 	}
+
+	if ku.EdgeNodeIP != "" {
+		edgeCoreConfig.Modules.Edged.NodeIP = ku.EdgeNodeIP
+	}
+
 	if ku.RuntimeType != "" {
 		edgeCoreConfig.Modules.Edged.RuntimeType = ku.RuntimeType
 	}
+
+	if ku.CertPort != "" {
+		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.CertPort
+	} else {
+		edgeCoreConfig.Modules.EdgeHub.HTTPServer = "https://" + strings.Split(ku.CloudCoreIP, ":")[0] + ":10002"
+	}
+
+	if ku.QuicPort != "" {
+		edgeCoreConfig.Modules.EdgeHub.Quic.Server = strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.QuicPort
+	} else {
+		edgeCoreConfig.Modules.EdgeHub.Quic.Server = strings.Split(ku.CloudCoreIP, ":")[0] + ":10001"
+	}
+
+	if ku.TunnelPort != "" {
+		edgeCoreConfig.Modules.EdgeStream.TunnelServer = strings.Split(ku.CloudCoreIP, ":")[0] + ":" + ku.TunnelPort
+	} else {
+		edgeCoreConfig.Modules.EdgeStream.TunnelServer = strings.Split(ku.CloudCoreIP, ":")[0] + ":10004"
+	}
+
+	// add NoSchedule taints
+	if ku.HasDefaultTaint {
+		taint := corev1.Taint{
+			Key:    "node-role.kubernetes.io/edge",
+			Effect: "NoSchedule",
+		}
+		edgeCoreConfig.Modules.Edged.Taints = append(edgeCoreConfig.Modules.Edged.Taints, taint)
+	}
+
 	if ku.CGroupDriver != "" {
 		switch ku.CGroupDriver {
 		case v1alpha1.CGroupDriverSystemd:

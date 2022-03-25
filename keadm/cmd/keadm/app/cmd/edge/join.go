@@ -114,6 +114,24 @@ func addJoinOtherFlags(cmd *cobra.Command, joinOptions *types.JoinOptions) {
 
 	cmd.Flags().StringSliceVarP(&joinOptions.Labels, types.Labels, "l", joinOptions.Labels,
 		`use this key to set the customized labels for node. you can input customized labels like key1=value1,key2=value2`)
+
+	cmd.Flags().StringVarP(&joinOptions.EdgeNodeIP, types.EdgeNodeIP, "a", joinOptions.EdgeNodeIP,
+		"KubeEdge Node internal IP reported to K8s cluster, If flag not used then the command will use the IP address read from node network")
+
+	cmd.Flags().StringVarP(&joinOptions.Region, types.Region, "z", joinOptions.Region,
+		"To distinguish download links for KubeEdge EdgeCore and Services")
+
+	cmd.Flags().BoolVarP(&joinOptions.HasDefaultTaint, types.HasDefaultTaint, "w", joinOptions.HasDefaultTaint,
+		"To determine whether to add taint on edge node")
+
+	cmd.Flags().StringVarP(&joinOptions.ConfigPath, types.ConfigPath, "c", joinOptions.ConfigPath,
+		"KubeEdge config file path used to join")
+
+	cmd.Flags().StringVarP(&joinOptions.QuicPort, types.QuicPort, "q", joinOptions.QuicPort,
+		"The port where to apply for the edge quic")
+
+	cmd.Flags().StringVarP(&joinOptions.TunnelPort, types.TunnelPort, "n", joinOptions.TunnelPort,
+		"The port where to apply for the edge stream connected tunnel")
 }
 
 // newJoinOptions returns a struct ready for being used for creating cmd join flags.
@@ -165,6 +183,12 @@ func Add2ToolsList(toolList map[string]types.ToolsInstaller, flagData map[string
 		CGroupDriver:          joinOptions.CGroupDriver,
 		TarballPath:           joinOptions.TarballPath,
 		Labels:                joinOptions.Labels,
+		EdgeNodeIP:            joinOptions.EdgeNodeIP,
+		Region:                joinOptions.Region,
+		HasDefaultTaint:       joinOptions.HasDefaultTaint,
+		ConfigPath:            joinOptions.ConfigPath,
+		QuicPort:              joinOptions.QuicPort,
+		TunnelPort:            joinOptions.TunnelPort,
 	}
 
 	toolList["MQTT"] = &util.MQTTInstTool{}

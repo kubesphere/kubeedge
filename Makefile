@@ -147,7 +147,9 @@ integrationtest:
 	edge/test/integration/scripts/execute.sh
 endif
 
-CROSSBUILD_COMPONENTS=edgecore
+CROSSBUILD_COMPONENTS=edgecore \
+	keadm 
+
 GOARM_VALUES=GOARM7 \
 	GOARM8
 
