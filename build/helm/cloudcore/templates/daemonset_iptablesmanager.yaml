@@ -43,5 +43,5 @@ spec:
         {{- end }}
         {{- with .Values.iptablesManager.resources }}
         resources: {{ toYaml . | nindent 10 }}
-        {{- end }} 
+        {{- end }}
 {{- end }}

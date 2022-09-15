@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2021 The KubeEdge Authors 
+# Copyright 2021 The KubeEdge Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ function :copy:to:destination {
             CRD_NAME=${CRD_NAME%?}
           fi
           cp -v ${entry} ${CRD_OUTPUTS}/devices/devices_${DEVICES_VERSION}_${CRD_NAME}.yaml
-          cp -v ${entry} ${HELM_CRDS_DIR}/devices_${DEVICES_VERSION}_${CRD_NAME}.yaml 
+          cp -v ${entry} ${HELM_CRDS_DIR}/devices_${DEVICES_VERSION}_${CRD_NAME}.yaml
       elif [ "$CRD_NAME" == "clusterobjectsyncs" ]; then
           cp -v ${entry} ${CRD_OUTPUTS}/reliablesyncs/cluster_objectsync_${RELIABLESYNCS_VERSION}.yaml
           cp -v ${entry} ${HELM_CRDS_DIR}/cluster_objectsync_${RELIABLESYNCS_VERSION}.yaml
@@ -94,7 +94,7 @@ function :copy:to:destination {
   done
 
   for r_entry in `ls ${ROUTER_DIR}/*.yaml`; do
-    # cp router CRDs  
+    # cp router CRDs
     cp -v ${r_entry} ${HELM_CRDS_DIR}/
   done
 }

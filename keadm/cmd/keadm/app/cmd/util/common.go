@@ -42,11 +42,11 @@ import (
 
 // Constants used by installers
 const (
-	EdgeServiceFile      = "edgecore.service"
-	CloudServiceFile     = "cloudcore.service"
-	KubeEdgePath         = "/etc/kubeedge/"
-	KubeEdgeUsrBinPath   = "/usr/local/bin"
-	KubeEdgeBinaryName   = "edgecore"
+	EdgeServiceFile    = "edgecore.service"
+	CloudServiceFile   = "cloudcore.service"
+	KubeEdgePath       = "/etc/kubeedge/"
+	KubeEdgeUsrBinPath = "/usr/local/bin"
+	KubeEdgeBinaryName = "edgecore"
 
 	KubeCloudBinaryName = "cloudcore"
 
