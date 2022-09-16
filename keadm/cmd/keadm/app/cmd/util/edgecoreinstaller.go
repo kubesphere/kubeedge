@@ -76,7 +76,7 @@ func (ku *KubeEdgeInstTool) InstallTools() error {
 	}
 
 	if ku.Region == "en" {
-		KubeEdgeDownloadURL = "https://github.com/kubeedge/kubeedge/releases/download"
+		KubeEdgeDownloadURL = "https://github.com/kubesphere/kubeedge/releases/download"
 		ServiceFileURLFormat = "https://raw.githubusercontent.com/kubeedge/kubeedge/release-%s/build/tools/%s"
 	}
 
