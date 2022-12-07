@@ -61,8 +61,12 @@ spec:
         volumeMounts:
         - name: conf
           mountPath: /etc/kubeedge/config
+        {{ if .Values.cloudCore.modules.cloudHub.generateCerts }}
+        - name: cloudhub
+          mountPath: /etc/kubeedge/hub
+        {{ end }}
         - name: certs
-          mountPath: /etc/kubeedge
+          mountPath: /etc/kubeedge/stream
         - name: sock
           mountPath: /var/lib/kubeedge
         - mountPath: /etc/localtime
@@ -83,11 +87,11 @@ spec:
           secretName: cloudcore
           items:
           - key: stream.crt
-            path: certs/stream.crt
+            path: stream.crt
           - key: stream.key
-            path: certs/stream.key
+            path: stream.key
           - key: streamCA.crt
-            path: ca/streamCA.crt
+            path: streamCA.crt
       - name: sock
         hostPath:
           path: /var/lib/kubeedge
@@ -96,3 +100,8 @@ spec:
           path: /etc/localtime
           type: ""
         name: host-time
+      {{ if .Values.cloudCore.modules.cloudHub.generateCerts }}
+      - name: cloudhub
+        secret:
+          secretName: cloudhub
+      {{end}}

@@ -34,3 +34,17 @@ streamCA.crt: {{ $ca.Cert | b64enc }}
 stream.crt: {{ $cert.Cert | b64enc }}
 stream.key: {{ $cert.Key | b64enc }}
 {{- end -}}
+
+{{/*
+Generate certificates for kubeedge cloudhub server
+*/}}
+{{- define "cloudcore.gen-cloudhub-certs" -}}
+{{- $ips := .Values.cloudCore.modules.cloudHub.advertiseAddress }}
+{{- $cn := printf "KubeEdge" }}
+{{- $ca := genCA "KubeEdge" 36500 -}}
+{{- $cert := genSignedCert $cn $ips nil 36500 $ca -}}
+rootCA.crt: {{ $ca.Cert | b64enc }}
+rootCA.key: {{ $ca.Key | b64enc }}
+server.crt: {{ $cert.Cert | b64enc }}
+server.key: {{ $cert.Key | b64enc }}
+{{- end -}}
